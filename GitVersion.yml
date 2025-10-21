@@ -1,0 +1,12 @@
+workflow: GitHubFlow/v1
+assembly-versioning-scheme: MajorMinorPatch
+assembly-file-versioning-scheme: MajorMinorPatch
+tag-prefix: '[vV]?'
+semantic-version-format: Strict
+strategies:
+  - Mainline
+next-version: 0.1.0
+commit-message-incrementing: Enabled
+major-version-bump-message: '(?s)^.*(BREAKING CHANGE|!):.*$'
+minor-version-bump-message: '(?s)^feat(\(.+\))?:'
+patch-version-bump-message: '(?s)^(fix|perf|refactor|chore|docs|test|build|ci)(\(.+\))?:'
