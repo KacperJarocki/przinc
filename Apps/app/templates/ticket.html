@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dodaj Ticket</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Dodaj nowy ticket</h1>
+        <form method="post">
+            <input name="title" placeholder="Tytuł" required><br>
+            <textarea name="description" placeholder="Opis" 
+required></textarea><br>
+            <select name="category">
+                {% for id, name in categories %}
+                    <option value="{{ id }}">{{ name }}</option>
+                {% endfor %}
+            </select><br>
+            <button type="submit">Dodaj ticket</button>
+        </form>
+        <p><a href="/">Powrót do strony głównej</a></p>
+    </div>
+</body>
+</html>
+

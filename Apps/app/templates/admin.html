@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Admina</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Panel Admina</h1>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Tytuł</th>
+                <th>Status</th>
+                <th>User</th>
+                <th>Kategoria</th>
+            </tr>
+            {% for id, title, status, user, category in tickets %}
+            <tr>
+                <td>{{ id }}</td>
+                <td>{{ title }}</td>
+                <td>{{ status }}</td>
+                <td>{{ user }}</td>
+                <td>{{ category }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <p><a href="/">Powrót do strony głównej</a></p>
+    </div>
+</body>
+</html>
+
