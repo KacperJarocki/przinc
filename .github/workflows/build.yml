@@ -1,41 +1,184 @@
-name: CI
+name: CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "Apps/**"
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Push image to GHCR"
+        type: boolean
+        default: true
 
 permissions:
-  contents: write
+  contents: read
+  packages: write
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Normalize image name (lowercase)
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "name=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install GitVersion
+        if: ${{ github.ref_name == 'main' && github.event_name == 'push' }}
+        uses: gittools/actions/gitversion/setup@v4.1.0
+        with:
+          versionSpec: "6.3.0"
+
+      - name: Create Apps-only history (subtree split)
+        if: ${{ github.ref_name == 'main' && github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git subtree split --prefix=Apps -b __apps_history
+
+      - name: Determine SemVer (Apps only)
+        if: ${{ github.ref_name == 'main' && github.event_name == 'push' }}
+        id: semver
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout __apps_history
+          dotnet-gitversion /output json /outputfile gitversion.json
+          echo "mmp=$(jq -r '.MajorMinorPatch' gitversion.json)" >> "$GITHUB_OUTPUT"
+          echo "semver=$(jq -r '.SemVer' gitversion.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Compute SHA tag (any branch/manual)
+        id: shatag
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "shortsha=$(git rev-parse --short=7 $GITHUB_SHA)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout back to event commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "${GITHUB_SHA}"
+
+      - name: Define image tags
+        id: tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="${{ env.REGISTRY }}/${{ steps.image.outputs.name }}"
+          SHORT="${{ steps.shatag.outputs.shortsha }}"
+
+          if [[ "${{ github.ref_name }}" == "main" && "${{ github.event_name }}" == "push" ]]; then
+            SEM="v${{ steps.semver.outputs.mmp }}"
+            echo "tags=${IMAGE}:${SEM},${IMAGE}:${SHORT}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tags=${IMAGE}:${SHORT}" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and (optionally) push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Apps
+          file: ./Apps/Dockerfile
+          push: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
+          tags: ${{ steps.tags.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # - name: Smoke test container (run and check)
+      #   shell: bash
+      #   run: |
+      #     set -euo pipefail
+      #     IMAGE="${{ steps.tags.outputs.image }}:${{ steps.shatag.outputs.shortsha }}"
+      #     docker pull "$IMAGE" || true
+      #     docker run -d --rm --name app -p 8080:8080 "$IMAGE"
+      #     for i in {1..20}; do
+      #       if curl -fsS http://localhost:8080/health >/dev/null 2>&1; then
+      #         echo "Health OK"
+      #         docker stop app
+      #         exit 0
+      #       fi
+      #       sleep 1
+      #     done
+      #     echo "Health FAIL"
+      #     docker logs app || true
+      #     docker stop app || true
+      #     exit 1
+
+      - name: Trivy scan image
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.tags.outputs.image }}:${{ steps.shatag.outputs.shortsha }}
+          format: table
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  tag-release:
+    needs: build-and-push
+    if: ${{ github.ref_name == 'main' && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   
-          
+          fetch-depth: 0
+
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v4.1.0
         with:
-          versionSpec: '6.3.0'
+          versionSpec: "6.3.0"
 
-      - name: Determine Version
-        id: version_step
-        uses: gittools/actions/gitversion/execute@v4.1.0
+      - name: Compute SemVer from Apps only (again, for tag step)
+        id: semver
+        shell: bash
+        run: |
+          set -euo pipefail
+          git subtree split --prefix=Apps -b __apps_history
+          git checkout __apps_history
+          dotnet-gitversion /output json /outputfile gitversion.json
+          echo "mmp=$(jq -r '.MajorMinorPatch' gitversion.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Show Version Info
+      - name: Create and push Git tag
+        shell: bash
         run: |
-          echo "SemVer: ${{ steps.version_step.outputs.semVer }}"
-          echo "FullSemVer: ${{ steps.version_step.outputs.fullSemVer }}"
-          echo "InformationalVersion: ${{ steps.version_step.outputs.informationalVersion }}"
-      
-      - name: Create and push Git tag 
-        run: |
-          TAG="v${{ steps.version_step.outputs.MajorMinorPatch }}"
-          echo "Planned tag: $TAG"
+          set -euo pipefail
+          git checkout "${GITHUB_SHA}"
+
+          TAG="v${{ steps.semver.outputs.mmp }}"
+          git fetch --tags --force
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists. Skipping."
             exit 0
@@ -43,7 +186,6 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
 
-          echo "Pushed tag $TAG"
+          git tag -a "$TAG" -m "Release $TAG (Apps scope)"
+          git push origin "$TAG"
