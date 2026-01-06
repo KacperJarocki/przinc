@@ -1,13 +1,14 @@
 module "name" {
-  source = "../name_generator"
+  source          = "../name_generator"
+  name_components = var.name_components
 }
+
 resource "azurerm_kubernetes_cluster" "this" {
   name                = module.name.name
   location            = var.inputs.location
   resource_group_name = var.inputs.resource_group_name
 
   kubernetes_version      = var.configuration.kubernetes_version
-  dns_prefix              = "${local.name}-dns"
   private_cluster_enabled = false
 
   network_profile {
@@ -22,14 +23,6 @@ resource "azurerm_kubernetes_cluster" "this" {
     vnet_subnet_id = var.inputs.subnet_id
     type           = "VirtualMachineScaleSets"
     max_pods       = 30
-
-    enable_auto_scaling = var.configuration.enable_autoscale
-    min_count           = var.configuration.enable_autoscale ? var.configuration.min_count : null
-    max_count           = var.configuration.enable_autoscale ? var.configuration.max_count : null
-
-    priority        = var.configuration.use_spot ? "Spot" : "Regular"
-    spot_max_price  = var.configuration.use_spot ? var.configuration.spot_max_price : null
-    eviction_policy = var.configuration.use_spot ? "Delete" : null
   }
 
   identity {
