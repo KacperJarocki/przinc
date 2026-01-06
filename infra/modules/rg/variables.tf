@@ -6,3 +6,10 @@ variable "name_components" {
     postfix      = optional(number, 0)
   })
 }
+variable "inputs" {
+  description = "Optional inputs for the module"
+  type = object({
+    tags = optional(map(string), {})
+  })
+  default = {}
+}
