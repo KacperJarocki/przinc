@@ -21,11 +21,13 @@ variable "configuration" {
 
 variable "inputs" {
   type = object({
-    resource_group_name = string
-    location            = string
-    subnet_id           = string
-    log_analytics_id    = optional(string)
-    tags                = optional(map(string), {})
+    resource_group_name     = string
+    location                = string
+    subnet_id               = string
+    acr_subnet_id           = string
+    acr_private_dns_zone_id = string
+    log_analytics_id        = optional(string)
+    tags                    = optional(map(string), {})
   })
 }
 

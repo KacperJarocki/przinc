@@ -4,16 +4,18 @@ module "name" {
 }
 
 resource "azurerm_kubernetes_cluster" "this" {
-  name                = module.name.name
-  location            = var.inputs.location
-  resource_group_name = var.inputs.resource_group_name
-
-  kubernetes_version      = var.configuration.kubernetes_version
+  name                    = module.name.name
+  location                = var.inputs.location
+  resource_group_name     = var.inputs.resource_group_name
   private_cluster_enabled = false
-
+  dns_prefix              = "brch-kacperjarocki"
   network_profile {
-    network_plugin = "azure"
-    outbound_type  = "loadBalancer"
+    network_plugin      = "azure"
+    network_plugin_mode = "overlay"
+    outbound_type       = "loadBalancer"
+    pod_cidr            = "10.244.0.0/16"
+    service_cidr        = "10.1.0.0/16"
+    dns_service_ip      = "10.1.0.10"
   }
 
   default_node_pool {
@@ -41,4 +43,25 @@ resource "azurerm_kubernetes_cluster" "this" {
     environment = var.name_components.environment
     service     = var.name_components.service
   }, var.inputs.tags)
+}
+module "acr" {
+  source = "../acr"
+  name_components = {
+    project_name = "bhd"
+    environment  = "dev"
+    service      = "acr"
+  }
+  configuration = {}
+  inputs = {
+    resource_group_name = var.inputs.resource_group_name
+    location            = var.inputs.location
+    subnet_id           = var.inputs.acr_subnet_id
+    private_dns_zone_id = var.inputs.acr_private_dns_zone_id
+  }
+}
+resource "azurerm_role_assignment" "acr_role" {
+  principal_id                     = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
+  role_definition_name             = "AcrPull"
+  scope                            = module.acr.id
+  skip_service_principal_aad_check = true
 }
