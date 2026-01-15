@@ -47,8 +47,8 @@ resource "azurerm_kubernetes_cluster" "this" {
 module "acr" {
   source = "../acr"
   name_components = {
-    project_name = "bhd"
-    environment  = "dev"
+    project_name = var.name_components.project_name
+    environment  = var.name_components.environment
     service      = "acr"
   }
   configuration = {}
