@@ -10,6 +10,14 @@ resource "azurerm_container_registry" "acr" {
   sku                           = "Premium"
   admin_enabled                 = false
   public_network_access_enabled = false
+  tags = merge(
+    {
+      project     = var.name_components.project_name
+      environment = var.name_components.environment
+      service     = var.name_components.service
+    },
+    var.inputs.tags
+  )
 }
 
 resource "azurerm_private_endpoint" "acr" {
