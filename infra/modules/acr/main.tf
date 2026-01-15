@@ -45,6 +45,7 @@ resource "azurerm_container_registry_agent_pool" "agent_pool" {
   location                  = var.inputs.location
   container_registry_name   = azurerm_container_registry.acr.name
   virtual_network_subnet_id = var.inputs.subnet_id
+  tags                      = var.inputs.tags
 }
 
 output "id" {
