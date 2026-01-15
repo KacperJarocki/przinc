@@ -1,18 +1,21 @@
 module "name" {
-  source = "../name_generator"
+  source          = "../name_generator"
+  name_components = var.name_components
 }
+
 resource "azurerm_kubernetes_cluster" "this" {
-  name                = module.name.name
-  location            = var.inputs.location
-  resource_group_name = var.inputs.resource_group_name
-
-  kubernetes_version      = var.configuration.kubernetes_version
-  dns_prefix              = "${local.name}-dns"
+  name                    = module.name.name
+  location                = var.inputs.location
+  resource_group_name     = var.inputs.resource_group_name
   private_cluster_enabled = false
-
+  dns_prefix              = module.name.name
   network_profile {
-    network_plugin = "azure"
-    outbound_type  = "loadBalancer"
+    network_plugin      = "azure"
+    network_plugin_mode = "overlay"
+    outbound_type       = "loadBalancer"
+    pod_cidr            = "10.244.0.0/16"
+    service_cidr        = "10.1.0.0/16"
+    dns_service_ip      = "10.1.0.10"
   }
 
   default_node_pool {
@@ -22,14 +25,6 @@ resource "azurerm_kubernetes_cluster" "this" {
     vnet_subnet_id = var.inputs.subnet_id
     type           = "VirtualMachineScaleSets"
     max_pods       = 30
-
-    enable_auto_scaling = var.configuration.enable_autoscale
-    min_count           = var.configuration.enable_autoscale ? var.configuration.min_count : null
-    max_count           = var.configuration.enable_autoscale ? var.configuration.max_count : null
-
-    priority        = var.configuration.use_spot ? "Spot" : "Regular"
-    spot_max_price  = var.configuration.use_spot ? var.configuration.spot_max_price : null
-    eviction_policy = var.configuration.use_spot ? "Delete" : null
   }
 
   identity {
@@ -48,4 +43,25 @@ resource "azurerm_kubernetes_cluster" "this" {
     environment = var.name_components.environment
     service     = var.name_components.service
   }, var.inputs.tags)
+}
+module "acr" {
+  source = "../acr"
+  name_components = {
+    project_name = var.name_components.project_name
+    environment  = var.name_components.environment
+    service      = "acr"
+  }
+  configuration = {}
+  inputs = {
+    resource_group_name = var.inputs.resource_group_name
+    location            = var.inputs.location
+    subnet_id           = var.inputs.acr_subnet_id
+    private_dns_zone_id = var.inputs.acr_private_dns_zone_id
+  }
+}
+resource "azurerm_role_assignment" "acr_role" {
+  principal_id                     = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
+  role_definition_name             = "AcrPull"
+  scope                            = module.acr.id
+  skip_service_principal_aad_check = true
 }

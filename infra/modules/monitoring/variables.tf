@@ -14,6 +14,8 @@ variable "configuration" {
 }
 variable "inputs" {
   type = object({
-    config = optional(string)
+    resource_group_name = string
+    location            = string
+    tags                = optional(map(string), {})
   })
 }

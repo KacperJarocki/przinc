@@ -9,11 +9,26 @@ variable "name_components" {
 
 variable "configuration" {
   type = object({
-    config = optional(string)
+    vnet_address_space = list(string)
+    subnets = map(object({
+      subnet_address_prefixes = list(string)
+    }))
+
+    private_dns_zones = optional(
+      map(string),
+      {}
+    )
+
+    private_dns_zone_vnet_links = optional(
+      list(string),
+      []
+    )
   })
 }
 variable "inputs" {
   type = object({
-    config = optional(string)
+    resource_group_name = string
+    location            = string
+    tags                = optional(map(string), {})
   })
 }
