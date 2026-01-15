@@ -13,6 +13,16 @@ variable "configuration" {
     subnets = map(object({
       subnet_address_prefixes = list(string)
     }))
+
+    private_dns_zones = optional(
+      map(string),
+      {}
+    )
+
+    private_dns_zone_vnet_links = optional(
+      list(string),
+      []
+    )
   })
 }
 variable "inputs" {
