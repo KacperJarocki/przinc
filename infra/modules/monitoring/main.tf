@@ -9,6 +9,14 @@ resource "azurerm_log_analytics_workspace" "this" {
   location            = var.inputs.location
   sku                 = "PerGB2018"
   retention_in_days   = 30
+  tags = merge(
+    {
+      project     = var.name_components.project_name
+      environment = var.name_components.environment
+      service     = var.name_components.service
+    },
+    var.inputs.tags
+  )
 }
 
 output "id" {
