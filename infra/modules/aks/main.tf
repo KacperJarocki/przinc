@@ -8,7 +8,7 @@ resource "azurerm_kubernetes_cluster" "this" {
   location                = var.inputs.location
   resource_group_name     = var.inputs.resource_group_name
   private_cluster_enabled = false
-  dns_prefix              = "brch-kacperjarocki"
+  dns_prefix              = module.name.name
   network_profile {
     network_plugin      = "azure"
     network_plugin_mode = "overlay"
