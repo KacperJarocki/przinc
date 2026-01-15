@@ -17,6 +17,7 @@ resource "azurerm_private_endpoint" "acr" {
   location            = var.inputs.location
   resource_group_name = var.inputs.resource_group_name
   subnet_id           = var.inputs.subnet_id
+  tags                = var.inputs.tags
 
   private_service_connection {
     name                           = "acr-priv-conn"
