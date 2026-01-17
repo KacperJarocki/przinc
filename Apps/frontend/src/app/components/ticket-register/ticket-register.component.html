@@ -1,0 +1,80 @@
+<div class="report-container">
+  <mat-card class="report-card elevation-z4">
+    <mat-card-header class="report-header">
+      <div class="header-content">
+        <mat-card-title class="report-title">Zgłoś nowy problem</mat-card-title>
+        <mat-card-subtitle>Wypełnij formularz, aby utworzyć zgłoszenie</mat-card-subtitle>
+      </div>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="reportForm" (ngSubmit)="submitReport()" class="report-form">
+        
+        <div class="row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Imię i nazwisko</mat-label>
+            <input matInput formControlName="fullName" placeholder="Jan Kowalski" />
+            <mat-icon matSuffix>person</mat-icon>
+            <mat-error *ngIf="reportForm.get('fullName')?.invalid && reportForm.get('fullName')?.touched">Pole jest wymagane</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email" placeholder="jan@example.com" />
+            <mat-icon matSuffix>email</mat-icon>
+            <mat-error *ngIf="reportForm.get('email')?.invalid && reportForm.get('email')?.touched">Wprowadź poprawny adres email</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Temat zgłoszenia</mat-label>
+            <input matInput formControlName="title" placeholder="Krótki opis problemu" />
+            <mat-icon matSuffix>title</mat-icon>
+            <mat-error *ngIf="reportForm.get('title')?.invalid && reportForm.get('title')?.touched">Temat jest wymagany</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Kategoria</mat-label>
+            <mat-select formControlName="category" placeholder="Wybierz kategorię">
+              <mat-option *ngFor="let cat of categories" [value]="cat">
+                {{cat}}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="reportForm.get('category')?.invalid && reportForm.get('category')?.touched">Wybierz kategorię</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Priorytet</mat-label>
+            <mat-select formControlName="priority">
+              <mat-option value="low">Niski</mat-option>
+              <mat-option value="medium">Średni</mat-option>
+              <mat-option value="high">Wysoki</mat-option>
+              <mat-option value="urgent">Pilny</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Szczegółowy opis problemu</mat-label>
+            <textarea matInput formControlName="description" rows="6" placeholder="Opisz dokładnie, co się stało..."></textarea>
+            <mat-error *ngIf="reportForm.get('description')?.invalid && reportForm.get('description')?.touched">Opis jest wymagany</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="reportForm.invalid || isSubmitting" class="submit-btn">
+            <mat-icon>send</mat-icon>
+            {{ isSubmitting ? 'Wysyłanie...' : 'Wyślij zgłoszenie' }}
+          </button>
+        </div>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
