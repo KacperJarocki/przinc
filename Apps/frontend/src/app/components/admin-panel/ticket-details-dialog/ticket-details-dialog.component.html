@@ -1,0 +1,172 @@
+<div class="ticket-dialog-container">
+  <div class="loading-overlay" *ngIf="isLoading">
+    <mat-spinner diameter="50"></mat-spinner>
+  </div>
+
+  <div class="dialog-header">
+    <div class="title-container" *ngIf="!isEditingTitle">
+        <h2 class="ticket-title">{{ ticket.title }}</h2>
+        <button mat-icon-button (click)="startEditTitle()" matTooltip="Edytuj tytuł">
+            <mat-icon style="font-size: 18px; margin-top: -6px;">edit</mat-icon>
+        </button>
+    </div>
+    <div class="title-edit-container" *ngIf="isEditingTitle">
+        <mat-form-field appearance="outline" class="title-input">
+            <input matInput [(ngModel)]="ticket.title">
+        </mat-form-field>
+        <button mat-icon-button color="primary" (click)="saveTitle()"><mat-icon>check</mat-icon></button>
+        <button mat-icon-button color="warn" (click)="cancelEditTitle()"><mat-icon>close</mat-icon></button>
+    </div>
+    
+    <div class="header-actions">
+        <button mat-flat-button color="warn" (click)="deleteTicket()">
+          <mat-icon>delete</mat-icon>
+          Usuń incydent
+        </button>
+        <button mat-icon-button (click)="closeDialog()" class="close-button">
+          <mat-icon>close</mat-icon>
+        </button>
+    </div>
+  </div>
+
+  <div class="dialog-content">
+    <div class="ticket-info-section">
+      <mat-card class="info-card">
+        <mat-card-content>
+          <div class="info-row">
+            <span class="label">ID:</span>
+            <span class="value">#{{ ticket.id }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Status:</span>
+            <mat-form-field appearance="outline" class="status-select">
+                <mat-select [value]="ticket.status" (selectionChange)="updateTicketStatus($event.value)">
+                    <mat-option value="Nowy">Nowy</mat-option>
+                    <mat-option value="Otwarte">Otwarte</mat-option>
+                    <mat-option value="W trakcie">W trakcie</mat-option>
+                    <mat-option value="Rozwiązane">Rozwiązane</mat-option>
+                    <mat-option value="Odrzucone">Odrzucone</mat-option>
+                    <mat-option value="Zamknięte">Zamknięte</mat-option>
+                </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="info-row">
+            <span class="label">Priorytet:</span>
+            <mat-form-field appearance="outline" class="status-select">
+                <mat-select [value]="ticket.priority" (selectionChange)="updateTicketPriority($event.value)">
+                    <mat-option value="Niski">Niski</mat-option>
+                    <mat-option value="Średni">Średni</mat-option>
+                    <mat-option value="Wysoki">Wysoki</mat-option>
+                    <mat-option value="Krytyczny">Krytyczny</mat-option>
+                </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="info-row">
+            <span class="label">Kategoria:</span>
+            <mat-form-field appearance="outline" class="status-select">
+                <mat-select [value]="ticket.category" (selectionChange)="updateTicketCategory($event.value)">
+                    <mat-option *ngFor="let cat of categories" [value]="cat">{{ cat }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="info-row">
+            <span class="label">Utworzone przez:</span>
+            <span class="value">{{ ticket.createdBy }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Przypisane do:</span>
+            <mat-form-field appearance="outline" class="status-select">
+                 <mat-select [value]="ticket.assignedTo" (selectionChange)="updateTicketAssignee($event.value)">
+                    <mat-option [value]="null">-- Brak --</mat-option>
+                    <mat-option *ngFor="let user of users" [value]="user.email">
+                        {{ user.firstName }} {{ user.lastName }} ({{ user.email }})
+                    </mat-option>
+                 </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="info-row description-row">
+            <div class="description-header">
+                <span class="label">Opis:</span>
+                <button mat-icon-button (click)="startEditDescription()" *ngIf="!isEditingDescription" matTooltip="Edytuj opis">
+                    <mat-icon>edit</mat-icon>
+                </button>
+            </div>
+            
+            <p class="description" *ngIf="!isEditingDescription">{{ ticket.description }}</p>
+            
+            <div *ngIf="isEditingDescription" class="description-edit">
+                <mat-form-field appearance="outline" style="width: 100%;">
+                    <textarea matInput [(ngModel)]="ticket.description" rows="5"></textarea>
+                </mat-form-field>
+                <div class="description-actions">
+                     <button mat-button color="primary" (click)="saveDescription()">Zapisz</button>
+                     <button mat-button (click)="cancelEditDescription()">Anuluj</button>
+                </div>
+            </div>
+          </div>
+          <div class="info-row" *ngIf="ticket.group">
+            <span class="label">Grupa:</span>
+            <span class="group-badge">{{ ticket.group }}</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="chat-section">
+      <mat-card class="chat-card">
+        <div class="chat-header">
+          <h3 class="chat-title">
+            <mat-icon>chat_bubble</mat-icon>
+            Konwersacja
+          </h3>
+        </div>
+        <mat-card-content class="chat-content">
+          <div class="messages-container">
+            <div *ngFor="let message of ticket.messages" 
+                 [class.user-message]="message.senderType === 'user'"
+                 [class.admin-message]="message.senderType === 'admin'"
+                 class="message-item">
+              <div class="message-header">
+                <span class="sender-name">{{ message.senderName }}</span>
+                <span class="message-time">{{ message.createdDate | date: 'short' }}</span>
+                <span *ngIf="message.senderType === 'admin'" class="admin-badge">Admin</span>
+                <span *ngIf="message.senderType === 'user'" class="user-badge">Użytkownik</span>
+              </div>
+              <div class="message-content">
+                {{ message.content }}
+              </div>
+            </div>
+
+            <div *ngIf="!ticket.messages || ticket.messages.length === 0" class="no-messages">
+              <mat-icon>mail_outline</mat-icon>
+              <p>Brak wiadomości w tej konwersacji</p>
+            </div>
+          </div>
+
+          <div class="message-input-section">
+            <mat-form-field appearance="outline" class="message-field">
+              <mat-label>Twoja odpowiedź</mat-label>
+              <textarea matInput 
+                        [(ngModel)]="newMessage"
+                        rows="4"
+                        placeholder="Wpisz swoją odpowiedź..."></textarea>
+            </mat-form-field>
+            <button mat-raised-button 
+                    color="primary" 
+                    (click)="sendMessage()"
+                    [disabled]="!newMessage || newMessage.trim().length === 0"
+                    class="send-button">
+              <mat-icon>send</mat-icon>
+              Wyślij odpowiedź
+            </button>
+          </div>
+          <div class="message-options" *ngIf="ticket.group">
+             <mat-checkbox [(ngModel)]="replyToGroup" color="primary">
+                Odpowiedz grupie (wyślij email do wszystkich)
+             </mat-checkbox>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

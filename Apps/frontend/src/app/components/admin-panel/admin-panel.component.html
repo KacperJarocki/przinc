@@ -1,0 +1,528 @@
+<div class="admin-panel-container">
+  <h2>Panel administratora</h2>
+  <mat-tab-group>
+    <mat-tab label="Incydenty">
+      <div class="dashboard-container">
+        <div class="dashboard-header">
+          <div>
+            <h1>Panel incydentów</h1>
+            <p class="subtitle">Monitoring i zarządzanie zgłoszeniami</p>
+          </div>
+          <div class="actions">               <button mat-stroked-button (click)="openGroupManagementDialog()" style="margin-right: 10px;">
+                  <mat-icon>settings</mat-icon>
+                  Zarządzaj grupami
+               </button>
+                            <button mat-stroked-button color="accent" (click)="openGroupDialog()" *ngIf="selectedTicketIds.size > 0">
+                <mat-icon>group_work</mat-icon>
+                Grupuj zaznaczone ({{selectedTicketIds.size}})
+             </button>
+             <button mat-raised-button color="primary" [matMenuTriggerFor]="exportMenu" [disabled]="dashboardLoading">
+                <mat-icon>download</mat-icon>
+                Eksportuj raport
+             </button>
+             <mat-menu #exportMenu="matMenu">
+               <button mat-menu-item (click)="exportReport('csv')">
+                 <mat-icon>description</mat-icon>
+                 <span>Eksportuj do CSV</span>
+               </button>
+               <button mat-menu-item (click)="exportReport('pdf')">
+                 <mat-icon>picture_as_pdf</mat-icon>
+                 <span>Eksportuj do PDF</span>
+               </button>
+             </mat-menu>
+          </div>
+        </div>
+
+        <div *ngIf="dashboardErrorMessage" class="error-message">
+          <mat-icon>error</mat-icon>
+          <span>{{ dashboardErrorMessage }}</span>
+        </div>
+
+        <div *ngIf="dashboardLoading" class="loading-spinner">
+          <mat-spinner diameter="50"></mat-spinner>
+        </div>
+
+        <div class="stats-grid" [style.opacity]="dashboardLoading ? 0.5 : 1">
+          <mat-card class="stat-card" matRipple>
+            <mat-card-content>
+              <div class="stat-header">
+                <mat-icon class="stat-icon">assignment</mat-icon>
+                <span class="stat-label">Razem</span>
+              </div>
+              <div class="stat-value">{{ stats.totalIncidents }}</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card" matRipple style="border-left: 4px solid #009688;">
+            <mat-card-content>
+              <div class="stat-header">
+                <mat-icon class="stat-icon" style="color: #009688;">fiber_new</mat-icon>
+                <span class="stat-label">Nowe</span>
+              </div>
+              <div class="stat-value">{{ stats.newIncidents }}</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card stat-alert" matRipple>
+            <mat-card-content>
+              <div class="stat-header">
+                <mat-icon class="stat-icon">pending_actions</mat-icon>
+                <span class="stat-label">Otwarte</span>
+              </div>
+              <div class="stat-value">{{ stats.openIncidents }}</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card" matRipple style="border-left: 4px solid #2196F3;">
+             <mat-card-content>
+              <div class="stat-header">
+                <mat-icon class="stat-icon" style="color: #2196F3;">loop</mat-icon>
+                <span class="stat-label">W trakcie</span>
+              </div>
+              <div class="stat-value">{{ stats.inProgressIncidents }}</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card stat-success" matRipple>
+            <mat-card-content>
+              <div class="stat-header">
+                <mat-icon class="stat-icon">check_circle</mat-icon>
+                <span class="stat-label">Rozwiązane</span>
+              </div>
+              <div class="stat-value">{{ stats.resolvedIncidents }}</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card" matRipple style="border-left: 4px solid #607d8b;">
+            <mat-card-content>
+              <div class="stat-header">
+                <mat-icon class="stat-icon" style="color: #607d8b;">done_all</mat-icon>
+                <span class="stat-label">Zamknięte</span>
+              </div>
+              <div class="stat-value">{{ stats.closedIncidents }}</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card stat-critical" matRipple>
+            <mat-card-content>
+              <div class="stat-header">
+                <mat-icon class="stat-icon">priority_high</mat-icon>
+                <span class="stat-label">Krytyczne</span>
+              </div>
+              <div class="stat-value">{{ stats.criticalCount }}</div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <mat-card class="filters-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>filter_list</mat-icon>
+              Filtry
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <form [formGroup]="filterForm" class="filter-form">
+              <mat-form-field appearance="outline" class="filter-field">
+                <mat-label>Status</mat-label>
+                <mat-select formControlName="status">
+                  <mat-option value="">Wszystkie</mat-option>
+                  <mat-option value="new">Nowy</mat-option>
+                  <mat-option value="open">Otwarte</mat-option>
+                  <mat-option value="in-progress">W trakcie</mat-option>
+                  <mat-option value="resolved">Rozwiązane</mat-option>
+                  <mat-option value="closed">Zamknięte</mat-option>
+                  <mat-option value="cancelled">Odrzucone</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="filter-field">
+                <mat-label>Priorytet</mat-label>
+                <mat-select formControlName="priority">
+                  <mat-option value="">Wszystkie</mat-option>
+                  <mat-option value="critical">Krytyczny</mat-option>
+                  <mat-option value="high">Wysoki</mat-option>
+                  <mat-option value="medium">Średni</mat-option>
+                  <mat-option value="low">Niski</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="filter-field">
+                <mat-label>Od daty</mat-label>
+                <input matInput [matDatepicker]="pickerFrom" formControlName="dateFrom">
+                <mat-datepicker-toggle matIconSuffix [for]="pickerFrom"></mat-datepicker-toggle>
+                <mat-datepicker #pickerFrom></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="filter-field">
+                <mat-label>Do daty</mat-label>
+                <input matInput [matDatepicker]="pickerTo" formControlName="dateTo">
+                <mat-datepicker-toggle matIconSuffix [for]="pickerTo"></mat-datepicker-toggle>
+                <mat-datepicker #pickerTo></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="filter-field">
+                <mat-label>Przypisane do</mat-label>
+                <mat-select formControlName="assignedTo">
+                  <mat-option value="">Wszyscy</mat-option>
+                  <mat-option *ngFor="let user of users" [value]="user.id">
+                    {{ user.firstName }} {{ user.lastName }} ({{ user.email }})
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <div class="filter-actions">
+                <button mat-raised-button color="primary" (click)="applyFilters()" [disabled]="dashboardLoading">
+                  <mat-icon>search</mat-icon>
+                  Zastosuj
+                </button>
+                <button mat-stroked-button (click)="resetFilters()" [disabled]="dashboardLoading">
+                  <mat-icon>restart_alt</mat-icon>
+                  Resetuj
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="incidents-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>list</mat-icon>
+              Ostatnie incydenty
+            </mat-card-title>
+            <span class="spacer"></span>
+            <span class="incident-count">{{ recentIncidents.length }} incydentów</span>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="table-container" [style.opacity]="dashboardLoading ? 0.5 : 1">
+              <table mat-table [dataSource]="recentIncidents" class="incidents-table">
+                
+                <ng-container matColumnDef="select">
+                  <th mat-header-cell *matHeaderCellDef>
+                    <mat-checkbox (change)="$event ? masterToggle() : null"
+                                  [checked]="selectedTicketIds.size > 0 && isAllSelected()"
+                                  [indeterminate]="selectedTicketIds.size > 0 && !isAllSelected()">
+                    </mat-checkbox>
+                  </th>
+                  <td mat-cell *matCellDef="let row">
+                    <mat-checkbox (click)="$event.stopPropagation()"
+                                  (change)="$event ? toggleSelection(row) : null"
+                                  [checked]="selectedTicketIds.has(row.id)">
+                    </mat-checkbox>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="id">
+                  <th mat-header-cell *matHeaderCellDef>#</th>
+                  <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="title">
+                  <th mat-header-cell *matHeaderCellDef>Tytuł</th>
+                  <td mat-cell *matCellDef="let element">
+                    <span class="title-text">{{ element.title }}</span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="createdBy">
+                  <th mat-header-cell *matHeaderCellDef>Utworzony przez</th>
+                  <td mat-cell *matCellDef="let element">
+                    <span class="author-text">{{ element.createdBy }}</span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <td mat-cell *matCellDef="let element">
+                    <span [class]="'status-badge ' + getStatusClass(element.status)">
+                      {{ element.status }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="priority">
+                  <th mat-header-cell *matHeaderCellDef>Priorytet</th>
+                  <td mat-cell *matCellDef="let element">
+                    <span [class]="'priority-badge ' + getPriorityClass(element.priority)">
+                      {{ element.priority }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="createdDate">
+                  <th mat-header-cell *matHeaderCellDef>Data Utworzenia</th>
+                  <td mat-cell *matCellDef="let element">
+                    <span class="date-text">{{ element.createdDate | date: 'short' }}</span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="group">
+                  <th mat-header-cell *matHeaderCellDef>Grupa</th>
+                  <td mat-cell *matCellDef="let element">
+                    <div *ngIf="element.group" class="group-cell">
+                      <span class="group-badge">{{ element.group }}</span>
+                      <button mat-icon-button (click)="removeTicketFromGroup(element)" class="remove-group-btn" matTooltip="Usuń z grupy">
+                          <mat-icon style="font-size: 16px; height: 16px; width: 16px; line-height: 16px;">close</mat-icon>
+                      </button>
+                    </div>
+                    <span *ngIf="!element.group" class="no-group">Brak grupy</span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef>Akcje</th>
+                  <td mat-cell *matCellDef="let element">
+                    <button mat-icon-button matTooltip="Dodaj do grupy" (click)="openGroupDialog(element)">
+                      <mat-icon>group_work</mat-icon>
+                    </button>
+                    <button mat-icon-button matTooltip="Szczegóły" (click)="viewIncidentDetails(element)">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="dashboardDisplayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: dashboardDisplayedColumns;"></tr>
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Użytkownicy">
+      <div class="tab-content">
+        <div class="header-with-button" style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <button mat-raised-button color="primary" (click)="openAddUserDialog()">
+            <mat-icon>add</mat-icon> Dodaj nowego administratora
+          </button>
+          <button mat-raised-button color="accent" (click)="openAllowedDomains()">
+            <mat-icon>domain</mat-icon> Zarządzaj domenami
+          </button>
+        </div>
+
+        <div *ngIf="isLoading" class="loading-spinner-container">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Ładowanie użytkowników</p>
+        </div>
+
+        <div *ngIf="errorMessage" class="error-message">
+          <p>{{ errorMessage }}</p>
+          <button mat-raised-button color="warn" (click)="getAllUsers()">Ponów</button>
+        </div>
+
+        <div *ngIf="!isLoading && !errorMessage">
+          <div *ngIf="users.length === 0" class="no-users-message">
+            <p>Nie znaleziono użytkowników</p>
+          </div>
+
+          <table mat-table [dataSource]="users" class="mat-elevation-z8" *ngIf="users.length > 0">
+            <ng-container matColumnDef="firstName">
+              <th mat-header-cell *matHeaderCellDef>Imie</th>
+              <td mat-cell *matCellDef="let user">{{ user.firstName }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="lastName">
+              <th mat-header-cell *matHeaderCellDef>Nazwisko</th>
+              <td mat-cell *matCellDef="let user">{{ user.lastName }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="email">
+              <th mat-header-cell *matHeaderCellDef>Email</th>
+              <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="role">
+              <th mat-header-cell *matHeaderCellDef>Rola</th>
+              <td mat-cell *matCellDef="let user">{{ user.role }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Akcje</th>
+              <td mat-cell *matCellDef="let user">
+                <button mat-button color="warn" (click)="deleteUser(user)" *ngIf="!isCurrentUser(user)">Usuń</button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Analityka">
+      <div class="analytics-container">
+        <div class="analytics-header">
+          <div>
+            <h1>Analityka</h1>
+          </div>
+        </div>
+
+        <mat-card class="date-filter-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>calendar_today</mat-icon>
+              Zakres czasowy i kategoria
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="date-filter-form">
+              <button mat-stroked-button (click)="setDateRange('week')" [class.active]="selectedDateRange === 'week'">
+                <mat-icon>date_range</mat-icon>
+                Ostatni tydzień
+              </button>
+              <button mat-stroked-button (click)="setDateRange('month')" [class.active]="selectedDateRange === 'month'">
+                <mat-icon>calendar_view_month</mat-icon>
+                Ostatni miesiąc
+              </button>
+              <button mat-stroked-button (click)="setDateRange('quarter')" [class.active]="selectedDateRange === 'quarter'">
+                <mat-icon>query_stats</mat-icon>
+                Ostatni kwartał
+              </button>
+              
+              <button mat-stroked-button (click)="picker.open()" [class.active]="selectedDateRange === 'custom'">
+                <mat-icon>edit_calendar</mat-icon>
+                <span *ngIf="selectedDateRange !== 'custom' || !customDateFrom || !customDateTo">Niestandardowy</span>
+                <span *ngIf="selectedDateRange === 'custom' && customDateFrom && customDateTo">
+                    {{ customDateFrom | date:'dd.MM' }} - {{ customDateTo | date:'dd.MM' }}
+                </span>
+              </button>
+
+              <div style="height: 0; width: 0; overflow: hidden; position: absolute;">
+                  <mat-form-field>
+                    <mat-date-range-input [rangePicker]="picker">
+                      <input matStartDate [(ngModel)]="customDateFrom" placeholder="Start date">
+                      <input matEndDate [(ngModel)]="customDateTo" (dateChange)="onCustomDateChange()" placeholder="End date">
+                    </mat-date-range-input>
+                    <mat-date-range-picker #picker></mat-date-range-picker>
+                  </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="custom-date-field">
+                <mat-label>Kategoria</mat-label>
+                <mat-select [(ngModel)]="selectedCategory" (selectionChange)="refreshAnalytics()">
+                  <mat-option value="">Wszystkie</mat-option>
+                  <mat-option *ngFor="let cat of categories" [value]="cat">
+                    {{ cat }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <div *ngIf="analyticsLoading" class="loading-spinner">
+          <mat-spinner diameter="50"></mat-spinner>
+        </div>
+
+        <div class="charts-container" [style.opacity]="analyticsLoading ? 0.5 : 1">
+          <mat-card class="chart-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>trending_up</mat-icon>
+                Trend ticketów w Czasie
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="chart-wrapper">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="chart-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>bar_chart</mat-icon>
+                Tickety wg priorytetu
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="chart-wrapper">
+                <canvas id="priorityChart"></canvas>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="chart-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>pie_chart</mat-icon>
+                Rozkład statusów
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="chart-wrapper">
+                <canvas id="statusChart"></canvas>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="chart-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>category</mat-icon>
+                Rozkład kategorii
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="chart-wrapper">
+                <canvas id="categoryChart"></canvas>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <mat-card class="recent-tickets-card" *ngIf="!analyticsLoading && recentAnalyticsTickets && recentAnalyticsTickets.length">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>list</mat-icon>
+              Ostatnie 3 tickety
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="tickets-table-wrapper">
+              <table mat-table [dataSource]="recentAnalyticsTickets" class="recent-tickets-table">
+                <ng-container matColumnDef="id">
+                  <th mat-header-cell *matHeaderCellDef>#</th>
+                  <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="title">
+                  <th mat-header-cell *matHeaderCellDef>Tytuł</th>
+                  <td mat-cell *matCellDef="let element">{{ element.title }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="category">
+                  <th mat-header-cell *matHeaderCellDef>Kategoria</th>
+                  <td mat-cell *matCellDef="let element">{{ element.category }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <td mat-cell *matCellDef="let element">
+                    <span [class]="'status-badge ' + getStatusClass(element.status)">
+                      {{ element.status }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="createdDate">
+                  <th mat-header-cell *matHeaderCellDef>Data</th>
+                  <td mat-cell *matCellDef="let element">
+                    {{ element.createdDate | date: 'short' }}
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="analyticsTicketsColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: analyticsTicketsColumns;"></tr>
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

@@ -11,12 +11,8 @@
 npm-debug.log
 yarn-error.log
 
-Apps/frontend/angular.json
-Apps/frontend/package.json
-Apps/frontend/package-lock.json
-Apps/frontend/tsconfig.json
-
 # IDEs and editors
+.vscode/
 .idea/
 .project
 .classpath
@@ -45,3 +41,4 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+.env
