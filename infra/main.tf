@@ -46,7 +46,7 @@ module "networking" {
       aks_systempool = {
         subnet_address_prefixes = ["10.0.1.0/24"]
       }
-      aks_userpool = {
+      aks_appgw = {
         subnet_address_prefixes = ["10.0.2.0/24"]
       }
       pe = {
@@ -119,5 +119,6 @@ module "aks" {
 
     kv_reader_namespace      = "bsk"
     kv_reader_serviceaccount = "bsk"
+    appgw_subnet_id          = module.networking.subnets["aks_appgw"].id
   }
 }

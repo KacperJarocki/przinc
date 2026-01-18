@@ -31,7 +31,9 @@ resource "azurerm_kubernetes_cluster" "this" {
     service_cidr   = "10.1.0.0/16"
     dns_service_ip = "10.1.0.10"
   }
-
+  ingress_application_gateway {
+    gateway_id = module.appgw.id
+  }
   default_node_pool {
     name           = "system"
     vm_size        = var.configuration.node_vm_size
@@ -60,6 +62,37 @@ resource "azurerm_kubernetes_cluster" "this" {
   }, var.inputs.tags)
 }
 
+module "appgw" {
+  source = "../app_gateway"
+
+  name_components = {
+    project_name = var.name_components.project_name
+    environment  = var.name_components.environment
+    service      = "app_gw"
+  }
+
+  configuration = {}
+
+  inputs = {
+    resource_group_name = var.inputs.resource_group_name
+    location            = var.inputs.location
+    subnet_id           = var.inputs.appgw_subnet_id
+  }
+}
+
+
+resource "azurerm_role_assignment" "agic_appgw_subnet_network_contributor" {
+  scope                = var.inputs.appgw_subnet_id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.this.identity[0].principal_id
+}
+
+
+resource "azurerm_role_assignment" "agic_appgw_contributor" {
+  scope                = module.appgw.id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_kubernetes_cluster.this.identity[0].principal_id
+}
 module "acr" {
   source = "../acr"
 

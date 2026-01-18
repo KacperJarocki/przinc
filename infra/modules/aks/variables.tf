@@ -33,5 +33,7 @@ variable "inputs" {
     kv_private_dns_zone_id        = string
     kv_reader_namespace           = string
     kv_reader_serviceaccount      = string
+
+    appgw_subnet_id = string
   })
 }

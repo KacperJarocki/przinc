@@ -58,7 +58,6 @@ resource "azurerm_private_dns_zone_virtual_network_link" "pdns_link_this_vnet" {
   }, var.inputs.tags)
 }
 
-# Optional: link zones to additional VNets passed from outside
 resource "azurerm_private_dns_zone_virtual_network_link" "pdns_link_extra_vnets" {
   for_each = {
     for pair in setproduct(keys(local.private_dns_zones), local.private_dns_zone_vnet_links) :
