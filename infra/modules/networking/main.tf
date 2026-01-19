@@ -8,12 +8,12 @@ resource "azurerm_virtual_network" "vnet" {
   address_space       = var.configuration.vnet_address_space
   location            = var.inputs.location
   resource_group_name = var.inputs.resource_group_name
+
   tags = merge({
     project     = var.name_components.project_name
     environment = var.name_components.environment
     service     = var.name_components.service
   }, var.inputs.tags)
-
 }
 
 resource "azurerm_subnet" "subnet" {
@@ -23,12 +23,10 @@ resource "azurerm_subnet" "subnet" {
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = each.value.subnet_address_prefixes
 }
+
 locals {
-  private_dns_zones = try(var.configuration.private_dns_zones, {})
-  private_dns_zone_vnet_links = distinct(concat(
-    [azurerm_virtual_network.vnet.id],
-    try(var.configuration.private_dns_zone_vnet_links, [])
-  ))
+  private_dns_zones           = try(var.configuration.private_dns_zones, {})
+  private_dns_zone_vnet_links = distinct(try(var.configuration.private_dns_zone_vnet_links, []))
 }
 
 resource "azurerm_private_dns_zone" "pdns" {
@@ -43,7 +41,24 @@ resource "azurerm_private_dns_zone" "pdns" {
   }, var.inputs.tags)
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "pdns_link" {
+resource "azurerm_private_dns_zone_virtual_network_link" "pdns_link_this_vnet" {
+  for_each = local.private_dns_zones
+
+  name                  = "pdns-${each.key}-link-this"
+  resource_group_name   = var.inputs.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.pdns[each.key].name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+
+  registration_enabled = false
+
+  tags = merge({
+    project     = var.name_components.project_name
+    environment = var.name_components.environment
+    service     = var.name_components.service
+  }, var.inputs.tags)
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "pdns_link_extra_vnets" {
   for_each = {
     for pair in setproduct(keys(local.private_dns_zones), local.private_dns_zone_vnet_links) :
     "${pair[0]}|${pair[1]}" => {

@@ -9,25 +9,31 @@ variable "name_components" {
 
 variable "configuration" {
   type = object({
-    node_vm_size     = optional(string, "Standard_B4ms")
-    node_count       = optional(number, 1)
-    enable_autoscale = optional(bool, false)
-    min_count        = optional(number, 1)
-    max_count        = optional(number, 3)
-    use_spot         = optional(bool, true)
-    spot_max_price   = optional(number, -1)
+    node_vm_size     = string
+    enable_autoscale = bool
+    node_count       = number
+    min_count        = number
+    max_count        = number
   })
 }
 
 variable "inputs" {
   type = object({
-    resource_group_name     = string
-    location                = string
-    subnet_id               = string
+    resource_group_name = string
+    location            = string
+    subnet_id           = string
+    tags                = map(string)
+
+    log_analytics_id = optional(string)
+
     acr_subnet_id           = string
     acr_private_dns_zone_id = string
-    log_analytics_id        = optional(string)
-    tags                    = optional(map(string), {})
+
+    kv_private_endpoint_subnet_id = string
+    kv_private_dns_zone_id        = string
+    kv_reader_namespace           = string
+    kv_reader_serviceaccount      = string
+
+    appgw_subnet_id = string
   })
 }
-
