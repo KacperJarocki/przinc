@@ -1,0 +1,7 @@
+node_modules
+.angular
+dist
+.git
+.DS_Store
+.vscode
+coverage

@@ -1,0 +1,21 @@
+<h2 mat-dialog-title>Zarządzaj grupami</h2>
+<mat-dialog-content>
+    <div class="loading-container" *ngIf="isLoading">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <mat-list *ngIf="!isLoading">
+        <mat-list-item *ngFor="let group of groups">
+            <mat-icon matListItemIcon>folder</mat-icon>
+            <div matListItemTitle>{{ group.name }}</div>
+            <div matListItemLine>{{ group.description || 'Brak opisu' }}</div>
+            <button mat-icon-button matListItemMeta (click)="deleteGroup(group)" matTooltip="Usuń grupę" class="delete-btn">
+                <mat-icon>delete</mat-icon>
+            </button>
+        </mat-list-item>
+        <p *ngIf="groups.length === 0" class="no-data">Brak dostępnych grup.</p>
+    </mat-list>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Zamknij</button>
+</mat-dialog-actions>

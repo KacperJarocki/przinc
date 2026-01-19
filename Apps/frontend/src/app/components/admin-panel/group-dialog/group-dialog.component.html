@@ -1,0 +1,42 @@
+<h2 mat-dialog-title>Zarządzanie grupą</h2>
+<mat-dialog-content>
+  <mat-tab-group>
+    <mat-tab label="Wybierz istniejącą">
+      <div class="tab-content">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Wybierz grupę</mat-label>
+          <mat-select [(ngModel)]="selectedGroupId">
+            <mat-option *ngFor="let group of groups" [value]="group.id">
+              {{ group.name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        <p *ngIf="groups.length === 0" class="no-data">Brak dostępnych grup. Utwórz nową.</p>
+      </div>
+    </mat-tab>
+    <mat-tab label="Utwórz nową">
+      <div class="tab-content">
+        <form [formGroup]="newGroupForm">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Nazwa grupy</mat-label>
+            <input matInput formControlName="name" placeholder="np. Awaria drukarek parter">
+            <mat-error *ngIf="newGroupForm.get('name')?.hasError('required')">
+              Nazwa jest wymagana
+            </mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Opis</mat-label>
+            <textarea matInput formControlName="description" rows="3" placeholder="Opis przyczyny grupowania..."></textarea>
+          </mat-form-field>
+        </form>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Anuluj</button>
+  <button mat-raised-button color="primary" (click)="confirm()" [disabled]="isLoading">
+    <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+    <span *ngIf="!isLoading">Zatwierdź</span>
+  </button>
+</mat-dialog-actions>
