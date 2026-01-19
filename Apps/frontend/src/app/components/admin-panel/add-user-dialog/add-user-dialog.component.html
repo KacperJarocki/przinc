@@ -1,0 +1,76 @@
+<h2 mat-dialog-title>Dodaj nowego użytkownika</h2>
+<div mat-dialog-content>
+  <form [formGroup]="addUserForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Imię</mat-label>
+      <input matInput formControlName="firstName" required>
+      <mat-error *ngIf="addUserForm.get('firstName')?.invalid && addUserForm.get('firstName')?.touched">
+        Imie jest wymagane
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nazwisko</mat-label>
+      <input matInput formControlName="lastName" required>
+      <mat-error *ngIf="addUserForm.get('lastName')?.invalid && addUserForm.get('lastName')?.touched">
+        Nazwisko jest wymagane
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email" type="email" required>
+      <mat-error *ngIf="addUserForm.get('email')?.hasError('required') && addUserForm.get('email')?.touched">
+        Email jest wymagany.
+      </mat-error>
+      <mat-error *ngIf="addUserForm.get('email')?.hasError('email') && addUserForm.get('email')?.touched">
+        Proszę wprowadzić poprawny email
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Hasło</mat-label>
+      <input matInput [type]="showPassword ? 'text' : 'password'" formControlName="password" required>
+      <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" type="button">
+        <mat-icon>{{ showPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+      </button>
+      <mat-error *ngIf="addUserForm.get('password')?.hasError('required') && addUserForm.get('password')?.touched">
+        Hasło jest wymagane
+      </mat-error>
+      <mat-error *ngIf="addUserForm.get('password')?.hasError('minlength') && addUserForm.get('password')?.touched">
+        Hasło musi mieć 12 znaków lub więcej
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Potwierdź hasło</mat-label>
+      <input matInput [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword" required>
+      <button mat-icon-button matSuffix (click)="toggleConfirmPasswordVisibility()" type="button">
+        <mat-icon>{{ showConfirmPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+      </button>
+      <mat-error *ngIf="addUserForm.get('confirmPassword')?.invalid && addUserForm.get('confirmPassword')?.touched">
+        Potwierdzenie hasła jest wymagane
+      </mat-error>
+      <mat-error *ngIf="addUserForm.hasError('passwordsNotMatching') && addUserForm.get('confirmPassword')?.touched">
+        Hasła nie są zgodne
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Rola</mat-label>
+      <mat-select formControlName="role" required>
+        <mat-option *ngFor="let role of roles" [value]="role.value">
+          {{role.viewValue}}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="addUserForm.get('role')?.invalid && addUserForm.get('role')?.touched">
+        Rola jest wymagana
+      </mat-error>
+    </mat-form-field>
+
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="onNoClick()">Anuluj</button>
+  <button mat-raised-button color="primary" (click)="onSaveClick()" [disabled]="addUserForm.invalid">Dodaj użytkownika</button>
+</div>
