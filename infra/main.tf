@@ -15,7 +15,7 @@ provider "azurerm" {
 
 locals {
   tags = {
-    project     = "bhd"
+    project     = "brch"
     environment = "dev"
   }
 }
@@ -24,7 +24,7 @@ module "rg" {
   source = "./modules/rg"
 
   name_components = {
-    project_name = "bhd"
+    project_name = "brch"
     environment  = "dev"
     service      = "rg"
   }
@@ -34,7 +34,7 @@ module "networking" {
   source = "./modules/networking"
 
   name_components = {
-    project_name = "bhd"
+    project_name = "brch"
     environment  = "dev"
     service      = "net"
   }
@@ -72,7 +72,7 @@ module "monitoring" {
   source = "./modules/monitoring"
 
   name_components = {
-    project_name = "bhd"
+    project_name = "brch"
     environment  = "dev"
     service      = "log"
   }
@@ -90,7 +90,7 @@ module "aks" {
   source = "./modules/aks"
 
   name_components = {
-    project_name = "bhd"
+    project_name = "brch"
     environment  = "dev"
     service      = "aks"
   }
@@ -106,7 +106,7 @@ module "aks" {
   inputs = {
     resource_group_name = module.rg.name
     location            = module.rg.location
-    tags                = { project = "bhd", environment = "dev" }
+    tags                = { project = "brch", environment = "dev" }
 
     subnet_id        = module.networking.subnets["aks_systempool"].id
     log_analytics_id = module.monitoring.id

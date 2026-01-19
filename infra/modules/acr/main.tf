@@ -39,6 +39,13 @@ resource "azurerm_private_endpoint" "acr" {
   }
 }
 
+resource "azurerm_container_registry_cache_rule" "cache_rule" {
+  name                  = "acr-cacherule"
+  container_registry_id = azurerm_container_registry.acr.id
+  target_repo           = "przinc"
+  source_repo           = "ghcr.io/kacperjarocki/przinc"
+}
+
 resource "azurerm_container_registry_agent_pool" "agent_pool" {
   name                      = "ag${var.name_components.project_name}${var.name_components.environment}"
   resource_group_name       = var.inputs.resource_group_name
